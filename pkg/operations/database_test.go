@@ -10,3 +10,31 @@ func TestCheckForDatabase(t *testing.T) {
 		t.Errorf("[ Error ] %v", err)
 	}
 }
+
+func TestProjectNewNote(t *testing.T) {
+    var u UserNotes
+    if err := u.CreateNewNote("project"); err != nil {
+        t.Fail()
+    }
+}
+
+func TestPersonalNote(t *testing.T) {
+    var u UserNotes
+    if err := u.CreateNewNote("personal"); err != nil {
+        t.Fail()
+    }
+}
+
+func TestClassNote(t *testing.T) {
+    var u UserNotes
+    if err := u.CreateNewNote("class"); err != nil {
+        t.Fail()
+    }
+}
+
+func TestErrorNote(t *testing.T) {
+    var u UserNotes
+    if err := u.CreateNewNote("peal"); err != nil {
+        t.Log(err)
+    }
+}

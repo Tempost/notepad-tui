@@ -82,15 +82,15 @@ func OpenDatabase(filepath string) (*gorm.DB, error) {
 }
 
 func CreateNewProjectNote() {
-	panic("[ INFO ] Not implmented yet. Consider working on this")
+    fmt.Println("Working")
 }
 
 func CreateNewPersonalNote() {
-	panic("[ INFO ] Not implmented yet. Consider working on this")
+    fmt.Println("Working")
 }
 
 func CreateNewClassNote() {
-	panic("[ INFO ] Not implmented yet. Consider working on this")
+    fmt.Println("Working")
 }
 
 // when go generics is released in stable consider changing this up
@@ -98,7 +98,7 @@ func (u *UserNotes) CreateNewNote(noteType string) error {
     noteType = strings.ToLower(noteType)
 
     switch noteType {
-        case "projectnote": {
+        case "project": {
             CreateNewProjectNote()
         }
         case "personal": {
@@ -113,5 +113,5 @@ func (u *UserNotes) CreateNewNote(noteType string) error {
         }
     } 
 
-    return errors.New("[ ERROR ] Something went really wrong, broke out of switch statement. This should never happen.") 
+    return nil 
 }
