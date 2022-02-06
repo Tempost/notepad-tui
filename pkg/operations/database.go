@@ -9,109 +9,125 @@ package database
 // when editing a note
 //  -- Pull markdown file from database
 //  -- Create a temp file in edits directory
-//  -- Push all files in edits directory to database when use saves notes from TUI
+//  -- Push all files in edits directory to database when user saves notes from TUI
 
 import (
+	"errors"
 	"fmt"
-    "errors"
+	"log"
 	"os"
-    "strings"
+	"strings"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
-type UserNotes struct {
-	gorm.Model
-	UserName string
-	// consider converting slice of notes into maps
-	ProjectNotes  []ProjectNote
-	PersonalNotes []PersonalNote
-	ClassNotes    []ClassNote
-	Scratchpads   []Scratchpad
-}
-
-type ProjectNote struct {
-    gorm.Model
-	Name string
-    // do not store this as a pointer in the DB
-    notes *os.File // check if file is actually a markdown file 
-}
-
-type PersonalNote struct {
-    gorm.Model
-	Name string
-    notes *os.File
-}
-
-type ClassNote struct {
-    gorm.Model
-	Name string
-    notes *os.File
-}
-
-type Scratchpad struct {
-    gorm.Model
-    notes *os.File
-}
-
-var bd *gorm.DB
+// global variable to avoid passing in a db handle to every function that works on the database
+var db *gorm.DB
 
 // On runtime of the application check for a database and it will open
 // if no database is found this will create a new database, populate with defaults and open
 // The defaults are just one blank note for each note type
-func CheckForDatabase() (*gorm.DB, error) {
-    filename := os.Getenv("USER") + ".db"
-    filepath := "../../data/" + filename
+func CheckForDatabase() error {
+	filename := os.Getenv("USER") + ".db"
+	// Once we get to were we can "ship" a binary determine where the data should go
+	filepath := "../../data/" + filename
 
-    // check if our file exists, otherwise skip code inside if scope and open the database
-    if _, err := os.Stat(filepath); errors.Is(err, os.ErrNotExist) {
-        os.Create(filepath) 
-        return OpenDatabase(filepath)
-    }
-    
-    return OpenDatabase(filepath)
+	// check if our file exists, otherwise skip code inside if scope and open the database
+	if _, err := os.Stat(filepath); errors.Is(err, os.ErrNotExist) {
+		os.Create(filepath)
+
+		err := OpenDatabase(filepath)
+		if err != nil {
+			return err
+		}
+
+		db.AutoMigrate(
+			&UserNotes{},
+			&ProjectNote{},
+			&PersonalNote{},
+			&ClassNote{},
+			&Scratchpad{},
+		)
+	}
+
+	return OpenDatabase(filepath)
 }
 
-func OpenDatabase(filepath string) (*gorm.DB, error) {
-    db, err := gorm.Open(sqlite.Open(filepath))
-    if err != nil {
-        return nil, fmt.Errorf("[ ERROR ]: %v", err)
-    }
-    return db, nil
+func OpenDatabase(filepath string) error {
+	var err error
+	db, err = gorm.Open(sqlite.Open(filepath))
+	if err != nil {
+		return fmt.Errorf("[ ERROR ]: %v", err)
+	}
+	return nil
 }
 
-func CreateNewProjectNote() {
-    fmt.Println("Working")
+// Create new markdownfile -> projectname_project.md
+// Push to edits directory
+// Handle the case where a Note has the same name as one in the database or in the yet to be
+// saved notes
+func (p *ProjectNote) CreateNewProjectNote(name string) {
+	note, err := GenNewFile(name)
+	if err != nil {
+		log.Fatalln("[ ERROR ] Could not create file: ", err)
+	}
+	p.note = note
 }
 
-func CreateNewPersonalNote() {
-    fmt.Println("Working")
+// Create new markdownfile -> projectname_project.md
+func (p *PersonalNote) CreateNewPersonalNote(name string) {
+	note, err := GenNewFile(name)
+	if err != nil {
+		log.Fatalln("[ ERROR ] Could not create file: ", err)
+	}
+	p.note = note
 }
 
-func CreateNewClassNote() {
-    fmt.Println("Working")
+// Create new markdownfile -> projectname_project.md
+func (c *ClassNote) CreateNewClassNote(name string) {
+	note, err := GenNewFile(name)
+	if err != nil {
+		log.Fatalln("[ ERROR ] Could not create file: ", err)
+	}
+	c.note = note
+}
+
+func GenNewFile(name string) (*os.File, error) {
+	filepath := "../../edits/" + name + ".md"
+	return os.Create(filepath)
 }
 
 // when go generics is released in stable consider changing this up
-func (u *UserNotes) CreateNewNote(noteType string) error {
-    noteType = strings.ToLower(noteType)
+func (u *UserNotes) CreateNewNote(noteType string, name string) error {
+	noteType = strings.ToLower(noteType)
 
-    switch noteType {
-        case "project": {
-            CreateNewProjectNote()
-        }
-        case "personal": {
-            CreateNewPersonalNote()
-        }
-        case "class": {
-            CreateNewClassNote()
-        }
-        default: {
-            err := errors.New("[ ERROR ] Something went wrong, unable to create new note as type:") 
-            return fmt.Errorf("%v %s", err, noteType)
-        }
-    } 
+	switch noteType {
+	case "project":
+		{
+			var p ProjectNote
+			p.CreateNewProjectNote(name)
+		}
+	case "personal":
+		{
+			var p PersonalNote
+			p.CreateNewPersonalNote(name)
+		}
+	case "class":
+		{
+			var c ClassNote
+			c.CreateNewClassNote(name)
+		}
+	default:
+		{
+			err := errors.New("[ ERROR ] Something went wrong, unable to create new note as type:")
+			return fmt.Errorf("%v %s", err, noteType)
+		}
+	}
 
-    return nil 
+	return nil
+}
+
+func (u *UserNotes) SaveEditsToDatabase() {
+    panic("Not implmented yet")
 }
