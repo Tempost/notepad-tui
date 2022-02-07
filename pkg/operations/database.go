@@ -30,25 +30,39 @@ var db *gorm.DB
 // The defaults are just one blank note for each note type
 func CheckForDatabase() error {
 	filename := os.Getenv("USER") + ".db"
-	// Once we get to were we can "ship" a binary determine where the data should go
+    // TODO: Once we get to were we can "ship" a binary determine where the data should go
 	filepath := "../../data/" + filename
 
 	// check if our file exists, otherwise skip code inside if scope and open the database
 	if _, err := os.Stat(filepath); errors.Is(err, os.ErrNotExist) {
 		os.Create(filepath)
 
-		err := OpenDatabase(filepath)
-		if err != nil {
-			return err
-		}
-
-		db.AutoMigrate(
+		if err := OpenDatabase(filepath); err != nil {
+            return err
+        }
+        
+        // NOTE(Cody): What happens here if instead of auto migrating with empty structs, we create the users
+        // default layout and push that into the AutoMigrate?
+        err := db.AutoMigrate(
 			&UserNotes{},
 			&ProjectNote{},
 			&PersonalNote{},
 			&ClassNote{},
 			&Scratchpad{},
 		)
+        if err != nil {
+            return err
+        }
+
+        user := UserNotes {
+            UserName: os.Getenv("USER"),
+        }
+
+        user.CreateNewNote("ProjectNote", "Default")
+        user.CreateNewNote("PersonalNote", "Default")
+        user.CreateNewNote("ClassNote", "Default")
+        
+        // TODO: Generate a scratch pad
 	}
 
 	return OpenDatabase(filepath)
@@ -56,7 +70,10 @@ func CheckForDatabase() error {
 
 func OpenDatabase(filepath string) error {
 	var err error
-	db, err = gorm.Open(sqlite.Open(filepath))
+	db, err = gorm.Open(sqlite.Open(filepath), &gorm.Config{
+        DisableForeignKeyConstraintWhenMigrating: true,
+    })
+
 	if err != nil {
 		return fmt.Errorf("[ ERROR ]: %v", err)
 	}
@@ -72,60 +89,67 @@ func (p *ProjectNote) CreateNewProjectNote(name string) {
 	if err != nil {
 		log.Fatalln("[ ERROR ] Could not create file: ", err)
 	}
+    p.Name = name 
 	p.note = note
 }
 
-// Create new markdownfile -> projectname_project.md
+// Create new markdownfile -> projectname_personal.md
 func (p *PersonalNote) CreateNewPersonalNote(name string) {
 	note, err := GenNewFile(name)
 	if err != nil {
 		log.Fatalln("[ ERROR ] Could not create file: ", err)
 	}
+    p.Name = name 
 	p.note = note
 }
 
-// Create new markdownfile -> projectname_project.md
+// Create new markdownfile -> projectname_class.md
 func (c *ClassNote) CreateNewClassNote(name string) {
 	note, err := GenNewFile(name)
 	if err != nil {
 		log.Fatalln("[ ERROR ] Could not create file: ", err)
 	}
+    c.Name = name 
 	c.note = note
 }
 
+// TODO(Cody): Pass in note type as well
 func GenNewFile(name string) (*os.File, error) {
 	filepath := "../../edits/" + name + ".md"
 	return os.Create(filepath)
 }
 
-// when go generics is released in stable consider changing this up
-func (u *UserNotes) CreateNewNote(noteType string, name string) error {
+// NOTE(Cody): when go generics is released in stable consider changing this up
+func (u *UserNotes) CreateNewNote(noteType string, name string) (error, *os.File){
 	noteType = strings.ToLower(noteType)
-
-	switch noteType {
-	case "project":
-		{
-			var p ProjectNote
-			p.CreateNewProjectNote(name)
-		}
-	case "personal":
-		{
-			var p PersonalNote
-			p.CreateNewPersonalNote(name)
-		}
-	case "class":
-		{
-			var c ClassNote
-			c.CreateNewClassNote(name)
-		}
-	default:
-		{
-			err := errors.New("[ ERROR ] Something went wrong, unable to create new note as type:")
-			return fmt.Errorf("%v %s", err, noteType)
-		}
+    var note *os.File
+    switch noteType {
+        case "project":
+            {
+                var p ProjectNote
+                p.CreateNewProjectNote(name)
+                u.ProjectNotes = append(u.ProjectNotes, p)
+            }
+        case "personal": 
+            {
+                var p PersonalNote
+                p.CreateNewPersonalNote(name)
+                u.PersonalNotes = append(u.PersonalNotes, p)
+            }
+        case "class":
+            {
+                var c ClassNote
+                c.CreateNewClassNote(name)
+                u.ClassNotes = append(u.ClassNotes, c)
+            }
+        default:
+            {
+            err := errors.New("[ ERROR ] Something went wrong, unable to create new note as type:")
+            return fmt.Errorf("%v %s", err, noteType), nil
+            }
 	}
 
-	return nil
+	return nil, note
 }
 
 func (u *UserNotes) SaveEditsToDatabase() {

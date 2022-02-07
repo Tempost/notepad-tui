@@ -9,9 +9,9 @@ type UserNotes struct {
 	gorm.Model
 	UserName string
 	// consider converting slice of notes into maps
-	ProjectNotes  []ProjectNote
-	PersonalNotes []PersonalNote
-	ClassNotes    []ClassNote
+    ProjectNotes  []ProjectNote `gorm:"foreignKey:Name"`
+    PersonalNotes []PersonalNote `gorm:"foreignKey:Name"`
+    ClassNotes    []ClassNote `gorm:"foreignKey:Name"`
 	Scratchpad
 }
 
