@@ -1,17 +1,17 @@
 package database
 
 import (
-    "os"
 	"gorm.io/gorm"
+	"os"
 )
 
 type UserNotes struct {
 	gorm.Model
 	UserName string
 	// consider converting slice of notes into maps
-    ProjectNotes  []ProjectNote `gorm:"foreignKey:Name"`
-    PersonalNotes []PersonalNote `gorm:"foreignKey:Name"`
-    ClassNotes    []ClassNote `gorm:"foreignKey:Name"`
+	ProjectNotes  []ProjectNote  `gorm:"foreignKey:Name"`
+	PersonalNotes []PersonalNote `gorm:"foreignKey:Name"`
+	ClassNotes    []ClassNote    `gorm:"foreignKey:Name"`
 	Scratchpad
 }
 
