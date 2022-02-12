@@ -12,12 +12,14 @@ import (
 	"fmt"
 	"os"
     tui "github.com/Tempost/notepad-tui/pkg/TUI"
+    ops "github.com/Tempost/notepad-tui/pkg/operations"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 
 func main() {
+    ops.CheckForDatabase()
 	p := tea.NewProgram(tui.Startup())
 	if err := p.Start(); err != nil {
 		fmt.Printf("Alas, [ Error ] has occured: %v", err)

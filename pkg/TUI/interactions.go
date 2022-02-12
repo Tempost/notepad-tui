@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"os"
 
+    ops "github.com/Tempost/notepad-tui/pkg/operations"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 // this package will cover all TUI operations
-// including building the UI, handling key events and sending off data to the database
+// including building/rendering the UI, handling key events and sending off data to the database
 // through the use of the database package
 
 func Startup() StartupMenu {
@@ -23,14 +24,12 @@ func (s StartupMenu) Init() tea.Cmd {
     return nil
 }
 
-// NOTE: Avoid any use of concurrency here
+// NOTE: Avoid any use of concurrency here bubbletea doesn't like it too much
 func (s StartupMenu) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
     switch msg := msg.(type) {
 
-        // Is it a key press?
         case tea.KeyMsg:
 
-            // Cool, what was the actual key pressed?
             switch msg.String() {
 
             // These keys should exit the program.
@@ -61,7 +60,8 @@ func (s StartupMenu) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
                 if ok {
                     delete(s.selected, s.cursor)
                 } else {
-                    s.selected[s.cursor] = struct{}{}
+                    s.selected[s.cursor] = struct{}{} 
+
                 }
             }
         }

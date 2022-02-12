@@ -33,7 +33,7 @@ func CheckForDatabase() error {
 	filename := os.Getenv("USER") + ".db"
 
 	// TODO: Once we get to were we can "ship" a binary determine where the data should go
-	filepath := "../../data/" + filename
+	filepath := "./data/" + filename
 
 	// check if our database exists, otherwise skip code inside if scope and open the database
 	if _, err := os.Stat(filepath); errors.Is(err, os.ErrNotExist) {
@@ -85,7 +85,7 @@ func OpenDatabase(filepath string) error {
 // Handle the case where a Note has the same name as one in the database or in the yet to be
 // saved notes
 func (p *ProjectNote) CreateNewProjectNote(name string) {
-	note, err := os.Create("../../edits/" + name + ".md")
+	note, err := os.Create("./edits/" + name + ".md")
 	if err != nil {
 		log.Fatalln("[ ERROR ] Could not create file: ", err)
 	}
@@ -95,7 +95,7 @@ func (p *ProjectNote) CreateNewProjectNote(name string) {
 
 // Create new markdownfile -> projectname_personal.md
 func (p *PersonalNote) CreateNewPersonalNote(name string) {
-	note, err := os.Create("../../edits/" + name + ".md")
+	note, err := os.Create("./edits/" + name + ".md")
 	if err != nil {
 		log.Fatalln("[ ERROR ] Could not create file: ", err)
 	}
@@ -105,7 +105,7 @@ func (p *PersonalNote) CreateNewPersonalNote(name string) {
 
 // Create new markdownfile -> projectname_class.md
 func (c *ClassNote) CreateNewClassNote(name string) {
-	note, err := os.Create("../../edits/" + name + ".md")
+	note, err := os.Create("./edits/" + name + ".md")
 	if err != nil {
 		log.Fatalln("[ ERROR ] Could not create file: ", err)
 	}
